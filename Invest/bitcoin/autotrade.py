@@ -167,7 +167,7 @@ def analyze_data_with_gpt4(data_json):
     4. **Provide a Detailed Recommendation**: Tailor your advice considering your `btc_balance`, `krw_balance`, and the profit margin from the `btc_avg_buy_price` relative to the current market price.
 
     ### Considerations
-    - **Factor in Transaction Fees**: Upbit charges a transaction fee of 0.05%. Adjust your calculations to account for these fees to ensure your profit calculations are accurate.
+    - **Factor in Transaction&API Fees**: Upbit charges a transaction fee of 0.05%. and API request cost for Open API is $0.1 per time. Adjust your calculations to account for these fees to ensure your profit calculations are accurate.
     - **Account for Market Slippage**: Especially relevant when large orders are placed. Analyze the orderbook to anticipate the impact of slippage on your transactions.
     - Remember, successful investment strategies require balancing aggressive returns with careful risk assessment. Utilize a holistic view of market data, technical indicators, and current status to inform your strategies.
     - Consider setting predefined criteria for what constitutes a profitable strategy and the conditions under which penalties apply to refine the incentives for the analysis engine.
