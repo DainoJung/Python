@@ -4,3 +4,4 @@ pyupbit
 pandas
 pandas_ta
 schedule
+discord.py

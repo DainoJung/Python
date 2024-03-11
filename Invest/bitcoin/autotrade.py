@@ -8,10 +8,53 @@ import json
 from openai import OpenAI
 import schedule
 import time
+import discord
+import asyncio
+from discord.ext import commands, tasks
+from datetime import datetime, time, timedelta
 
 # Setup
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 upbit = pyupbit.Upbit(os.getenv("UPBIT_ACCESS_KEY"), os.getenv("UPBIT_SECRET_KEY"))
+intents = discord.Intents.default()
+bot = commands.Bot(command_prefix='!', intents=intents)
+
+# discord 설정
+token = os.getenv("DISCORD_BOT_KEY")
+channel_id = 1137952406517317713
+
+@bot.event
+async def on_ready():
+    print("봇이 온라인으로 전환되었습니다.")
+    create_thread.start()  # 봇이 준비되었을 때 작업 시작
+    
+@bot.event
+async def on_message(message):
+    global last_message_content
+    if message.author == bot.user:
+        return
+
+    if message.channel.id == channel_id:
+        last_message_content = message.content
+    await bot.process_commands(message)
+
+@tasks.loop(hours=1)
+async def create_thread():
+    now = datetime.now()
+
+    channel = bot.get_channel(channel_id)
+    if channel:
+        thread_name = now.strftime('%Y-%m-%d %H:%M') + " 스레드"
+        thread = await channel.create_thread(
+            name=thread_name,
+            auto_archive_duration=60  # 1시간 후 자동 아카이브
+        )
+
+        await thread.send(f"{last_message_content}")
+
+
+# 봇 구동
+bot.run(token)
 
 completion = client.chat.completions.create(
   model="gpt-3.5-turbo",
@@ -267,6 +310,8 @@ def make_decision_and_execute():
     try:
         decision = json.loads(advice)
         print(decision)
+        # 디스코드 메세지 전송
+        on_message(decision)
         if decision.get('decision') == "buy":
             execute_buy()
         elif decision.get('decision') == "sell":
@@ -282,4 +327,4 @@ if __name__ == "__main__":
     while True:
         schedule.run_pending()
         time.sleep(1)
-        
+
