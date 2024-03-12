@@ -21,37 +21,28 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 
 # discord 설정
 token = os.getenv("DISCORD_BOT_KEY")
-channel_id = 1137952406517317713
+channel_id = int(os.getenv("CHANER_ID"))
 
 @bot.event
 async def on_ready():
     print("봇이 온라인으로 전환되었습니다.")
-    create_thread.start()  # 봇이 준비되었을 때 작업 시작
-    
-@bot.event
-async def on_message(message):
-    global last_message_content
-    if message.author == bot.user:
-        return
-
-    if message.channel.id == channel_id:
-        last_message_content = message.content
-    await bot.process_commands(message)
 
 @tasks.loop(hours=1)
-async def create_thread():
+async def create_thread(message, decision):
     now = datetime.now()
 
     channel = bot.get_channel(channel_id)
     if channel:
-        thread_name = now.strftime('%Y-%m-%d %H:%M') + " 스레드"
+        thread_name = now.strftime('%Y-%m-%d %H:%M') + f' {decision}'
         thread = await channel.create_thread(
             name=thread_name,
-            auto_archive_duration=60  # 1시간 후 자동 아카이브
+            auto_archive_duration=1440  # 24시간 후 자동 아카이브
         )
-
-        await thread.send(f"{last_message_content}")
-
+        
+        thread_link = thread.jump_url  # 생성된 쓰레드의 링크
+        
+        await thread.send(f"{message}")
+        await channel.send(f"{now.strftime('%m')}월 {now.strftime('%d')}일 {now.strftime('%H')}시 API 업데이트 성공!\n{thread_link}")
 
 # 봇 구동
 bot.run(token)
@@ -310,19 +301,19 @@ def make_decision_and_execute():
     try:
         decision = json.loads(advice)
         print(decision)
-        # 디스코드 메세지 전송
-        on_message(decision)
+        # 디스코드 쓰레드 생성 & 메세지 발송
         if decision.get('decision') == "buy":
+            create_thread.start(decision, "buy")
             execute_buy()
         elif decision.get('decision') == "sell":
+            create_thread.start(decision, "sell")
             execute_sell()
     except Exception as e:
         print(f"Failed to parse the advice as JSON: {e}")
 
 if __name__ == "__main__":
     make_decision_and_execute()
-    # schedule.every().minute.do(make_decision_and_execute)
-    schedule.every().hour.at(':01').do(make_decision_and_execute)
+    schedule.every().hour.at(':58').do(make_decision_and_execute)
 
     while True:
         schedule.run_pending()
