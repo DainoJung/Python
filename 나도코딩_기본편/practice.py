@@ -1,9 +1,9 @@
-# \n : 줄바꿈
+url = "http://naver.com"
 
-# \\ : 문장 내에서 \
-    
-# \r : 커서를 맨 앞으로 이동
+my_str = url.replace("http://", "")
 
-# \b : 백스페이스 (한 글자 삭제)
+my_str = my_str[:my_str.index(".")]
 
-# \t : 탭
+password = f"{my_str[:3]}{len(my_str)}{my_str.count('e')}!"
+
+print(password)
