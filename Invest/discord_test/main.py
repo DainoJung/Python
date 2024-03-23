@@ -3,8 +3,10 @@ from dotenv import load_dotenv
 load_dotenv()
 import discord
 import asyncio
+import schedule
 from discord.ext import commands, tasks
-from datetime import datetime, time, timedelta
+from datetime import datetime, timedelta
+import time
 
 # setup
 intents = discord.Intents.default()
@@ -13,16 +15,18 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 # discord 설정
 token = os.getenv("DISCORD_BOT_KEY")
 channel_id = int(os.getenv("CHANER_ID"))
-last_message_content ='스레드 테스트'
+global_decision = ""
+global_message = ""
 
 @bot.event
 async def on_ready():
     print("봇이 온라인으로 전환되었습니다.")
-    create_thread.start('잭팍', '성공')  # 봇이 준비되었을 때 작업 시작
+    make_decision_and_execute()  # 봇이 준비되었을 때 작업 시작
 
 @tasks.loop(hours=1)
 async def create_thread(message, decision):
     now = datetime.now()
+    global global_decision, global_message
 
     channel = bot.get_channel(channel_id)
     if channel:
@@ -39,3 +43,21 @@ async def create_thread(message, decision):
         
 # 봇 구동
 bot.run(token)
+
+async def make_decision_and_execute():
+    print("Making decision and executing...")
+    global global_decision, global_message
+    global_decision = "왕"
+    global_message = "KING"
+    try:
+        asyncio.create_task(create_thread())
+    except Exception as e:
+        print(f"Failed to parse the advice as JSON: {e}")
+
+if __name__ == "__main__":
+    schedule.every().hour.at(':37').do(make_decision_and_execute)
+    schedule.every().hour.at(':53').do(make_decision_and_execute)
+
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
