@@ -1,9 +1,15 @@
-url = "http://naver.com"
+from random import *
 
-my_str = url.replace("http://", "")
+users = range(1, 21)
 
-my_str = my_str[:my_str.index(".")]
+users = list(users)
 
-password = f"{my_str[:3]}{len(my_str)}{my_str.count('e')}!"
+shuffle(users)
 
-print(password)
+prize = sample(users, 4)
+
+chicken = prize[0]
+
+coffee = prize[1:]
+
+print(f"-- 당첨자 발표 --\n치킨당청자 : {chicken}\n커피 당첨자 : {coffee}")
