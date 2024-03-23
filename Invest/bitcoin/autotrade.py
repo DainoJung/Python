@@ -11,7 +11,7 @@ import time
 import discord
 import asyncio
 from discord.ext import commands, tasks
-from datetime import datetime, time, timedelta
+from datetime import datetime
 
 # Setup
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -22,18 +22,21 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 # discord 설정
 token = os.getenv("DISCORD_BOT_KEY")
 channel_id = int(os.getenv("CHANER_ID"))
+global_decision = ""
+global_message = ""
 
 @bot.event
 async def on_ready():
     print("봇이 온라인으로 전환되었습니다.")
 
 @tasks.loop(hours=1)
-async def create_thread(message, decision):
+async def create_thread():
     now = datetime.now()
-
+    global global_decision, global_message
+     
     channel = bot.get_channel(channel_id)
     if channel:
-        thread_name = now.strftime('%Y-%m-%d %H:%M') + f' {decision}'
+        thread_name = now.strftime('%Y-%m-%d %H:%M') + f' {global_decision}'
         thread = await channel.create_thread(
             name=thread_name,
             auto_archive_duration=1440  # 24시간 후 자동 아카이브
@@ -41,19 +44,11 @@ async def create_thread(message, decision):
         
         thread_link = thread.jump_url  # 생성된 쓰레드의 링크
         
-        await thread.send(f"{message}")
+        await thread.send(global_message)
         await channel.send(f"{now.strftime('%m')}월 {now.strftime('%d')}일 {now.strftime('%H')}시 API 업데이트 성공!\n{thread_link}")
 
 # 봇 구동
 bot.run(token)
-
-completion = client.chat.completions.create(
-  model="gpt-3.5-turbo",
-  messages=[
-    {"role": "system", "content": "You are a helpful assistant."},
-    {"role": "user", "content": "Hello!"}
-  ]
-)
 
 def get_current_status():
     orderbook = pyupbit.get_orderbook(ticker="KRW-BTC")
@@ -74,7 +69,6 @@ def get_current_status():
     
 
 def fetch_and_prepare_data():
-    global btc_balance
     # Fetch data
     df_daily = pyupbit.get_ohlcv("KRW-BTC", "day", count=30)
     df_hourly = pyupbit.get_ohlcv("KRW-BTC", interval="minute60", count=24)
@@ -257,7 +251,6 @@ def analyze_data_with_gpt4(data_json):
     """
     try:
         current_status = get_current_status()
-        print(current_status)
         response = client.chat.completions.create(
             model="gpt-4-turbo-preview",
             messages=[
@@ -293,29 +286,31 @@ def execute_sell():
     except Exception as e:
         print(f"Failed to execute sell order: {e}")
 
-def make_decision_and_execute():
+async def make_decision_and_execute():
     print("Making decision and executing...")
+    global global_decision, global_message
     data_json = fetch_and_prepare_data()
     advice = analyze_data_with_gpt4(data_json)
 
     try:
         decision = json.loads(advice)
         print(decision)
+        global_decision = decision.get('decision')
+        global_message = decision.get('reason')
+        asyncio.create_task(create_thread())
+
         # 디스코드 쓰레드 생성 & 메세지 발송
-        if decision.get('decision') == "buy":
-            create_thread.start(decision, "buy")
+        if global_decision == "buy": 
             execute_buy()
-        elif decision.get('decision') == "sell":
-            create_thread.start(decision, "sell")
+        elif global_decision == "sell":
             execute_sell()
     except Exception as e:
         print(f"Failed to parse the advice as JSON: {e}")
 
 if __name__ == "__main__":
-    make_decision_and_execute()
-    schedule.every().hour.at(':58').do(make_decision_and_execute)
+    schedule.every().hour.at(':27').do(make_decision_and_execute)
+    schedule.every().hour.at(':53').do(make_decision_and_execute)
 
     while True:
         schedule.run_pending()
         time.sleep(1)
-
