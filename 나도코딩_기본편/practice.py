@@ -1,15 +1,6 @@
-from random import *
+students = [1, 2, 3, 4, 5]
 
-users = range(1, 21)
+# i에 students가 하나씩 들어가며 100을 더해준뒤 반환
+students = [i+100 for i in students]
 
-users = list(users)
-
-shuffle(users)
-
-prize = sample(users, 4)
-
-chicken = prize[0]
-
-coffee = prize[1:]
-
-print(f"-- 당첨자 발표 --\n치킨당청자 : {chicken}\n커피 당첨자 : {coffee}")
+print(students)
