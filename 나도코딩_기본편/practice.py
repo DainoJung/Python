@@ -1,6 +1,14 @@
-students = [1, 2, 3, 4, 5]
+from random import *
 
-# i에 students가 하나씩 들어가며 100을 더해준뒤 반환
-students = [i+100 for i in students]
+cnt = 0
 
-print(students)
+for i in range(1, 51):
+    time = randrange(5, 50)
+   
+    if (5 <= time <= 15):
+        cnt += 1
+        print(f"[O] {i}번째 손님 (소요시간 : {time}분")
+    else:
+        print(f"[X] {i}번째 손님 (소요시간 : {time}분")
+
+print(f"총 탑승 승객 : {cnt} 분")        
